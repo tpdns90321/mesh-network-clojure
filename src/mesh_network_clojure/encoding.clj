@@ -23,9 +23,8 @@
       under-sized-text (calc-padding :Text :Under under-sized-text)
       (calc-padding :Char :Char data-type))))
 
-(defn calc-position! [^java.nio.ByteOrder order
-                      [_ size padding]
-                      & [space]]
+(defn calc-position! [[_ size padding]
+                      & [^java.nio.ByteOrder order space]]
   (let [pos (+ padding 1)]
     (cond 
       (= size :Under) [1 pos]
@@ -41,7 +40,7 @@
         res
         (domonad maybe-m
           [type (dispense-type! (first data))
-           pos (calc-position! order type (rest data))
+           pos (calc-position! type order (rest data))
            state (cons (first type) pos)
            step (last (split-at (last pos) data))]
           (if (= :List (first type))
@@ -52,7 +51,25 @@
             (deserializer order step (cons state res)))))))
   ([^java.nio.ByteOrder order data] (deserializer order data nil)))
 
+(defn extractor
+  ([data [state & elem] res]
+    (lazy-seq
+      (let [get-pos (fn [state] (let [pos (rest state)
+                                      start (- (count data) (apply max pos))]
+                                  (map #(+ start %) pos)))
+            inner (apply (partial slice data) (get-pos state))
+            step (slice data 0 (apply min (get-pos state)))]
+        (if (= (first state) :List)
+          (extractor step elem
+            (cons (struct rlp :List
+                    (extractor inner elem nil)) res))
+          (if (or (empty? data) (empty? state))
+            res
+            (extractor step elem (cons (struct rlp :Text inner) res)))))))
+  ([data states] (extractor data states nil)))
+
 (defn decode-rlp
   "decoding plain text to clojure struct"
-  ([^java.nio.ByteOrder order data] '())
-  ([data] (decode-rlp data BYTEORDER)))
+  ([^java.nio.ByteOrder order data res] '())
+  ([order data] (decode-rlp order data nil))
+  ([data] (decode-rlp BYTEORDER data nil)))

@@ -51,23 +51,6 @@
             (deserializer order step (cons state res)))))))
   ([^java.nio.ByteOrder order data] (deserializer order data nil)))
 
-(defn extractor
-  ([data [state & elem] res]
-    (lazy-seq
-      (let [get-pos (fn [state] (let [pos (rest state)
-                                      start (- (count data) (apply max pos))]
-                                  (map #(+ start %) pos)))
-            inner (apply (partial slice data) (get-pos state))
-            step (slice data 0 (apply min (get-pos state)))]
-        (if (= (first state) :List)
-          (extractor step elem
-            (cons (struct rlp :List
-                    (extractor inner elem nil)) res))
-          (if (or (empty? data) (empty? state))
-            res
-            (extractor step elem (cons (struct rlp :Text inner) res)))))))
-  ([data states] (extractor data states nil)))
-
 (defn decode-rlp
   "decoding plain text to clojure struct"
   ([^java.nio.ByteOrder order data res] '())

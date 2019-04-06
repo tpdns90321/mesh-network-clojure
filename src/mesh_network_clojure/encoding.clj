@@ -23,8 +23,7 @@
       under-sized-text (calc-padding :Text :Under under-sized-text)
       (calc-padding :Char :Char data-type))))
 
-(defn calc-position! [[_ size padding]
-                      & [^java.nio.ByteOrder order space]]
+(defn calc-position! [[_ size padding] ^java.nio.ByteOrder order space]
   (let [pos (+ padding 1)]
     (condp = size
       :Under [1 pos]

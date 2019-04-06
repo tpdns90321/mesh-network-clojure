@@ -26,33 +26,31 @@
 (defn calc-position! [[_ size padding]
                       & [^java.nio.ByteOrder order space]]
   (let [pos (+ padding 1)]
-    (cond 
-      (= size :Under) [1 pos]
-      (= size :Char) [0 1]
-      (= size :Over) [pos (+ (bytes-to-unsigned-long!
-                               order
-                               (first (split-at padding space))) pos)])))
+    (condp = size
+      :Under [1 pos]
+      :Char [0 1]
+      :Over (domonad maybe-m
+                     [res (bytes-to-unsigned-long!
+                            order
+                            (first (split-at padding space)))]
+              [pos (+ pos res)]))))
 
-(defn deserializer
-  ([^java.nio.ByteOrder order data res]
-    (lazy-seq
-      (if (empty? data)
-        res
-        (domonad maybe-m
-          [type (dispense-type! (first data))
-           pos (calc-position! type order (rest data))
-           state (cons (first type) pos)
-           step (last (split-at (last pos) data))]
-          (if (= :List (first type))
-            (deserializer order step
-              (cons
-                (cons state (deserializer order (apply (partial slice data) pos) nil))
-                res))
-            (deserializer order step (cons state res)))))))
-  ([^java.nio.ByteOrder order data] (deserializer order data nil)))
+(defn deserializer [^java.nio.ByteOrder order data]
+  (lazy-seq
+    (if (empty? data)
+      nil
+      (domonad maybe-m
+        [type (dispense-type! (first data))
+         pos (calc-position! type order (rest data))
+         state (cons (first type) pos)
+         step (last (split-at (last pos) data))]
+        (if (= :List (first type))
+          (cons
+            (cons state (deserializer order (apply (partial slice data) pos)))
+            (deserializer order step))
+          (cons state (deserializer order step)))))))
 
 (defn decode-rlp
   "decoding plain text to clojure struct"
-  ([^java.nio.ByteOrder order data res] '())
-  ([order data] (decode-rlp order data nil))
-  ([data] (decode-rlp BYTEORDER data nil)))
+  ([^java.nio.ByteOrder order data] '())
+  ([data] (decode-rlp BYTEORDER data)))

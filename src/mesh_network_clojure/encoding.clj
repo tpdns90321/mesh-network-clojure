@@ -34,20 +34,23 @@
                             (first (split-at padding space)))]
               [pos (+ pos res)]))))
 
-(defn deserializer [^java.nio.ByteOrder order data]
-  (lazy-seq
-    (if (empty? data)
-      nil
-      (domonad maybe-m
-        [type (dispense-type! (first data))
-         pos (calc-position! type order (rest data))
-         state (cons (first type) pos)
-         step (last (split-at (last pos) data))]
-        (if (= :List (first type))
-          (cons
-            (cons state (deserializer order (apply (partial slice data) pos)))
-            (deserializer order step))
-          (cons state (deserializer order step)))))))
+(defn deserializer
+  ([^java.nio.ByteOrder order counter data]
+    (lazy-seq
+      (if (empty? data)
+        nil
+        (domonad maybe-m
+          [type (dispense-type! (first data))
+           pos (calc-position! type order (rest data))
+           state (cons (first type) (map #(+ counter %) pos))
+           step (deserializer order (last state) (last (split-at (last pos) data)))]
+          (if (= :List (first type))
+            (cons
+              (cons state
+	        (deserializer order
+		  (second state) (apply (partial slice data) pos))) step)
+            (cons state step))))))
+  ([^java.nio.ByteOrder order data] (deserializer order 0 data)))
 
 (defn decode-rlp
   "decoding plain text to clojure struct"

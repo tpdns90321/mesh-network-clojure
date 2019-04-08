@@ -21,11 +21,11 @@
                                 (concat
                                   [(+ encoding/under-sized-list 10)]
                                   (text-n-bytes 10)))
-         (list (list '(:List 1 11) '(:Text 1 10))))))
+         (list (list '(:List 1 11) '(:Text 2 11))))))
   (testing "recursion list"
     (is (=
          (encoding/deserializer d/BYTEORDER (map #(+ encoding/under-sized-list %) [2 1 0]))
-         (list (list '(:List 1 3) (list '(:List 1 2) (list '(:List 1 1))))))))
+         (list (list '(:List 1 3) (list '(:List 2 3) (list '(:List 3 3))))))))
   (testing "long text"
     (is (=
          (encoding/deserializer d/BYTEORDER (text-n-bytes 100))
@@ -34,4 +34,4 @@
     (is (=
          (encoding/deserializer d/BYTEORDER
                                 (concat (list encoding/over-sized-list 100) (text-n-bytes 100)))
-         (list '((:List 2 102) (:Text 2 100)))))))
+         (list '((:List 2 102) (:Text 4 102)))))))

@@ -54,5 +54,9 @@
 
 (defn decode-rlp
   "decoding plain text to clojure struct"
-  ([^java.nio.ByteOrder order data] '())
+  ([^java.nio.ByteOrder order data states] (map #(if (= (count %) 3)
+                                                  (let [[type & pos] %]
+                                                    (struct rlp type (apply (partial slice data) pos)))
+                                                  (struct rlp :List (decode-rlp order data (rest %)))) states))
+  ([^java.nio.ByteOrder order data] (decode-rlp order data (deserializer BYTEORDER data)))
   ([data] (decode-rlp BYTEORDER data)))

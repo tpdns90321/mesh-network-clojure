@@ -12,9 +12,9 @@
     (convert-fn buff)))
 
 (defn bytes! [data]
-  (if (every? #(< % 256) data) data nil))
+  (if (and (seq? data) (every? #(< % 256) data)) data nil))
 
-(defn limit-length [^ByteOrder order limit data]
+(defn limit-length! [^ByteOrder order limit data]
   (let [diff (- limit (count data))
         zero (repeat (short 0))]
     (if (>= diff 0)
@@ -27,9 +27,8 @@
   [convert-fn size]
   (fn [^ByteOrder order data]
     (domonad maybe-m
-             [data (bytes! data)
-              size (/ size 8)
-              data (limit-length order size data)]
+             [size (/ size 8)
+              data (bytes! (limit-length! order size data))]
       (bytes-to-data! convert-fn size order (byte-array data)))))
 
 (defn to-big-endian [^ByteOrder order data]
@@ -44,7 +43,7 @@
   (fn [^ByteOrder order data]
     (domonad maybe-m
              [size (/ size 8)
-              data (limit-length order size data)]
+              data (bytes! (limit-length! order size data))]
              (biginteger (byte-array (to-big-endian order data))))))
 
 (def bytes-to-i128! (def-big-integer 128))
@@ -55,8 +54,7 @@
   (fn [^ByteOrder order data]
     (domonad maybe-m
              [size (/ size 8)
-              data (bytes! data)
-              data (limit-length order size data)]
+              data (limit-length! order size data)]
              (converter-fn order data))))
 
 (def bytes-to-unsigned-int! (def-unsigned-types bytes-to-long! Integer/SIZE))

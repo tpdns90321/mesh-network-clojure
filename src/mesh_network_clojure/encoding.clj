@@ -1,7 +1,7 @@
 (ns mesh-network-clojure.encoding
   (:use [clojure.algo.monads :only [domonad maybe-m]]
         [mesh-network-clojure.default :only [BYTEORDER]]
-        [mesh-network-clojure.utils :only [slice bytes-to-unsigned-long!]]))
+        [mesh-network-clojure.utils :only [slice bytes! bytes-to-unsigned-long!]]))
 
 (defstruct rlp :type :data)
 
@@ -10,7 +10,7 @@
 (def under-sized-list (short 0xc0))
 (def over-sized-list (short 0xf8))
 
-(defn big? [size] (> size 56))
+(defn big? [size] (> size 55))
 
 (defn dispense-type! [data-type]
   (letfn [(calc-padding [type size type-pos]
@@ -55,10 +55,13 @@
 (defn decode-rlp
   "decoding plain text to clojure struct"
   ([^java.nio.ByteOrder order data states]
-    (map #(if (keyword? (first %))
-      (let [[type & pos] %]
-        (struct rlp type (apply (partial slice data) pos)))
-      (struct rlp :List (decode-rlp order data (rest %)))) states))
+    (map
+      #(if (keyword? (first %))
+        (domonad maybe-m
+                 [[type & pos] %
+                  inner (bytes! (apply (partial slice data) pos))]
+          (struct rlp type inner))
+        (struct rlp :List (decode-rlp order data (rest %)))) states))
   ([^java.nio.ByteOrder order data]
     (decode-rlp order data (deserializer BYTEORDER data)))
   ([data] (decode-rlp BYTEORDER data)))

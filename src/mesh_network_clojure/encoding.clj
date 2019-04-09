@@ -1,7 +1,8 @@
 (ns mesh-network-clojure.encoding
   (:use [clojure.algo.monads :only [domonad maybe-m]]
         [mesh-network-clojure.default :only [BYTEORDER]]
-        [mesh-network-clojure.utils :only [slice bytes! bytes-to-unsigned-long!]]))
+        [mesh-network-clojure.utils :only [slice bytes!]]
+        [mesh-network-clojure.utils.bytes :only [bytes-to-unsigned-long!]]))
 
 (defstruct rlp :type :data)
 

@@ -24,7 +24,7 @@
       under-sized-text (calc-padding :Text :Under under-sized-text)
       (calc-padding :Char :Char data-type))))
 
-(defn calc-position! [[_ size padding] ^java.nio.ByteOrder order space]
+(defn calc-position! [[_ size padding]  order space]
   (let [pos (+ padding 1)]
     (condp = size
       :Under [1 pos]
@@ -36,7 +36,7 @@
               [pos (+ pos res)]))))
 
 (defn deserializer
-  ([^java.nio.ByteOrder order counter data]
+  ([order counter data]
     (lazy-seq
       (if (empty? data)
         nil
@@ -51,11 +51,11 @@
 	        (deserializer order
 		  (second state) (apply (partial slice data) pos))) step)
             (cons state step))))))
-  ([^java.nio.ByteOrder order data] (deserializer order 0 data)))
+  ([order data] (deserializer order 0 data)))
 
 (defn decode-rlp
   "decoding plain text to clojure struct"
-  ([^java.nio.ByteOrder order data states]
+  ([order data states]
     (map
       #(if (keyword? (first %))
         (domonad maybe-m
@@ -63,6 +63,6 @@
                   inner (bytes! (apply (partial slice data) pos))]
           (struct rlp type inner))
         (struct rlp :List (decode-rlp order data (rest %)))) states))
-  ([^java.nio.ByteOrder order data]
+  ([order data]
     (decode-rlp order data (deserializer BYTEORDER data)))
   ([data] (decode-rlp BYTEORDER data)))

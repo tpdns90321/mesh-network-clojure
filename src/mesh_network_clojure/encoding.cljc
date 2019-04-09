@@ -4,8 +4,10 @@
         [mesh-network-clojure.utils :only [slice bytes!]]
         [mesh-network-clojure.utils.bytes :only [bytes-to-unsigned-long!]]))
 
+; decoding result struct and input data for encoding to rlp
 (defstruct rlp :type :data)
 
+; minimumize of type number
 (def under-sized-text (short 0x80))
 (def over-sized-text (short 0xb8))
 (def under-sized-list (short 0xc0))

@@ -34,4 +34,22 @@
     (is (=
          (encoding/deserializer d/BYTEORDER
                                 (concat (list encoding/over-sized-list 100) (text-n-bytes 100)))
-         (list '((:List 2 102) (:Text 4 102)))))))
+         (list '((:List 2 102) (:Text 4 102))))))
+  (testing "order"
+    (is (=
+         (encoding/deserializer d/BYTEORDER
+                                (apply (partial concat [80 80]) (repeat 2 (text-n-bytes 10))))
+         (list '(:Char 0 1) '(:Char 1 2) '(:Text 3 12) '(:Text 13 22))))))
+
+(deftest decode-rlp
+  (testing "text"
+    (is (=
+         (first (encoding/decode-rlp (text-n-bytes 100)))
+         (struct encoding/rlp :Text (repeat 98 0)))))
+  (testing "list"
+    (is (=
+         (encoding/decode-rlp d/BYTEORDER
+                                (concat
+                                  [(+ encoding/under-sized-list 10)]
+                                  (text-n-bytes 10)))
+         (list {:type :List,:data (list {:type :Text, :data (repeat 9 0)})})))))

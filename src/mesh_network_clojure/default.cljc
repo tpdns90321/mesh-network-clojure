@@ -1,4 +1,3 @@
-(ns mesh-network-clojure.default
-  (:import [java.nio ByteOrder]))
+(ns mesh-network-clojure.default)
 
 (def BYTEORDER :little-endian)

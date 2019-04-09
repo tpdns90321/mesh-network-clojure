@@ -1,6 +1,8 @@
 # mesh-network-clojure
 
-FIXME: description
+mesh network framework is the blockchain or decentralize platform build solution.
+it built webassembly, not only script or contract! now, smart-contract for consensus!
+but in real, we use interpreter for webassembly.
 
 ## Installation
 
@@ -30,7 +32,7 @@ FIXME: listing of options this app accepts.
 
 ## License
 
-Copyright © 2019 FIXME
+Copyright © 2019 tpdns90321
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at

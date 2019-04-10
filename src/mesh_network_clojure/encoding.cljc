@@ -2,7 +2,7 @@
   (:use [clojure.algo.monads :only [domonad maybe-m]]
         [mesh-network-clojure.default :only [BYTEORDER]]
         [mesh-network-clojure.utils :only [slice bytes!]]
-        [mesh-network-clojure.utils.bytes :only [bytes-to-unsigned-long!]]))
+        [mesh-network-clojure.utils.bytes :only [bytes-to-unsigned-long]]))
 
 (defstruct rlp :type :data)
 
@@ -10,8 +10,6 @@
 (def over-sized-text (short 0xb8))
 (def under-sized-list (short 0xc0))
 (def over-sized-list (short 0xf8))
-
-(defn big? [size] (> size 55))
 
 (defn dispense-type! [data-type]
   (letfn [(calc-padding [type size type-pos]
@@ -30,7 +28,7 @@
       :Under [1 pos]
       :Char [0 1]
       :Over (domonad maybe-m
-                     [res (bytes-to-unsigned-long!
+                     [res (bytes-to-unsigned-long
                             order
                             (first (split-at padding space)))]
               [pos (+ pos res)]))))
@@ -66,3 +64,5 @@
   ([order data]
     (decode-rlp order data (deserializer BYTEORDER data)))
   ([data] (decode-rlp BYTEORDER data)))
+
+(defn big? [size] (> size 55))

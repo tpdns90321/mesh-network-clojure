@@ -15,12 +15,16 @@
                       (.flip))]
        (convert-fn buff))))
 
-(defn to-big-endian [order data]
+(def get-int #?(:clj #(.getInt %)))
+(def get-long #?(:clj #(.getLong %)))
+
+(defn to-big-endian! [order data]
   (condp = order
     :little-endian (reverse data)
-    :big-endian data))
+    :big-endian data
+    nil))
 
 #?(:clj
-    (defn bytes-to-big-integer [order data]
-      (biginteger (byte-array (to-big-endian order data)))))
+    (defn bytes-to-big-integer! [order data]
+      (biginteger (byte-array (to-big-endian! order data)))))
 

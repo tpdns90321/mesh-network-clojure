@@ -28,3 +28,12 @@
     (defn bytes-to-big-integer! [order data]
       (biginteger (byte-array (to-big-endian! order data)))))
 
+#?(:clj
+   (defn data-to-bytes!
+     "convert custom type to bytes seq or array"
+     [input-fn size order data]
+     (let [buff (doto (ByteBuffer/allocate size)
+                      (.order (to-raw! order)))]
+       (input-fn buff data)
+       (.flip buff)
+       (.array buff))))

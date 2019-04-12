@@ -1,6 +1,5 @@
 (ns mesh-network-clojure.platform.bytes
   (:use [clojure.algo.monads :only [domonad maybe-m]]
-        [mesh-network-clojure.utils :only [bytes!]]
         [mesh-network-clojure.platform :only [to-raw!]]))
 
 (defn to-big-endian! [order data]

@@ -27,12 +27,15 @@
                       (.flip))]
        (convert-fn buff))))
 
-(def get-int #?(:clj (fn [^ByteBuffer buf] (.getInt buf))))
-(def get-long #?(:clj (fn [^ByteBuffer buf] (.getLong buf))))
+#?(:clj (def get-int (fn [^ByteBuffer buf] (.getInt buf))))
+#?(:clj (def get-long #?(:clj (fn [^ByteBuffer buf] (.getLong buf)))))
 
 #?(:clj
     (defn bytes-to-big-integer! [order data]
       (biginteger (byte-array (to-big-endian! order data)))))
+
+(defn unsigned-bytes [arr]
+ (map #(short (bit-and % 0xff)) arr))
 
 #?(:clj
    (defn data-to-bytes!
@@ -42,12 +45,15 @@
                       (.order (to-raw! order)))]
        (input-fn buff data)
        (.flip buff)
-       (.array buff))))
+       (unsigned-bytes
+         (into (list) (.array buff)))))
+
+#?(:clj (def set-int (fn [^ByteBuffer buf data] (.putInt buf data))))
+#?(:clj (def set-long #?(:clj (fn [^ByteBuffer buf data] (.putLong buf data)))))
 
 #?(:clj
    (defn big-integer-to-bytes! [order ^BigInteger data]
      (let [convert (.toByteArray data)]
-       (map
-         #(short (bit-and % 0xff))
-         (to-big-endian! order 
+       (unsigned-bytes
+         (to-big-endian! order
                          convert)))))

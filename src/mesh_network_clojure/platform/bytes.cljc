@@ -45,7 +45,7 @@
        (input-fn buff data)
        (.flip buff)
        (unsigned-bytes
-         (into (list) (.array buff))))))
+         (.array buff)))))
 
 #?(:clj (def set-int (fn [^ByteBuffer buf data] (.putInt buf data))))
 #?(:clj (def set-long (fn [^ByteBuffer buf data] (.putLong buf data))))

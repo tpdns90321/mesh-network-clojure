@@ -28,7 +28,7 @@
        (convert-fn buff))))
 
 #?(:clj (def get-int (fn [^ByteBuffer buf] (.getInt buf))))
-#?(:clj (def get-long #?(:clj (fn [^ByteBuffer buf] (.getLong buf)))))
+#?(:clj (def get-long (fn [^ByteBuffer buf] (.getLong buf))))
 
 #?(:clj
     (defn bytes-to-big-integer! [order data]
@@ -46,10 +46,10 @@
        (input-fn buff data)
        (.flip buff)
        (unsigned-bytes
-         (into (list) (.array buff)))))
+         (into (list) (.array buff))))))
 
 #?(:clj (def set-int (fn [^ByteBuffer buf data] (.putInt buf data))))
-#?(:clj (def set-long #?(:clj (fn [^ByteBuffer buf data] (.putLong buf data)))))
+#?(:clj (def set-long (fn [^ByteBuffer buf data] (.putLong buf data))))
 
 #?(:clj
    (defn big-integer-to-bytes! [order ^BigInteger data]

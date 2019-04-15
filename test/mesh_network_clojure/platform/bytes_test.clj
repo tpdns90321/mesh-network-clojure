@@ -37,3 +37,23 @@
     (is (=
          (b/data-to-bytes! b/set-long 8 :big-endian 255)
          (list 0 0 0 0 0 0 0 255)))))
+
+(deftest bytes-to-big-integer!
+  (testing "to little-endian"
+    (is (=
+          (b/bytes-to-big-integer! :little-endian (byte-array (list 0 1)))
+          (biginteger 256))))
+  (testing "to big-endian"
+    (is (=
+          (b/bytes-to-big-integer! :big-endian (byte-array (list 1 0)))
+          (biginteger 256)))))
+
+(deftest big-integer-to-bytes!
+  (testing "little-endian to"
+    (is (=
+          (b/big-integer-to-bytes! :little-endian (biginteger 256))
+          (list 0 1))))
+  (testing "big-endian to"
+    (is (=
+          (b/big-integer-to-bytes! :big-endian (biginteger 256))
+          (list 1 0)))))

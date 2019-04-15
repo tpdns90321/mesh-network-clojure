@@ -4,5 +4,5 @@
 
 (defmulti to-raw! identity)
 
-(defmethod to-raw! [:big-endian] [_] #?(:clj ByteOrder/BIG_ENDIAN))
-(defmethod to-raw! [:little-endian] [_] #?(:clj ByteOrder/LITTLE_ENDIAN))
+(defmethod to-raw! :big-endian [_] #?(:clj ByteOrder/BIG_ENDIAN))
+(defmethod to-raw! :little-endian [_] #?(:clj ByteOrder/LITTLE_ENDIAN))

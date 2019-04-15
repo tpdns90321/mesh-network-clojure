@@ -13,6 +13,7 @@
 (def under-sized-list (short 0xc0))
 (def over-sized-list (short 0xf8))
 
+;; use first of rlp bytes for dispense rlp's type
 (defn dispense-type! [data-type]
   (letfn [(calc-padding [type size type-pos]
           [type size (- data-type type-pos)])]
@@ -24,6 +25,7 @@
       under-sized-text (calc-padding :Text :Under under-sized-text)
       (calc-padding :Char :Char data-type))))
 
+;; collect length definition bytes and data space bytes
 (defn calc-position! [[_ size padding]  order space]
   (let [pos (+ padding 1)]
     (condp = size
@@ -35,6 +37,7 @@
                             (first (split-at padding space)))]
               [pos (+ pos res)]))))
 
+;; extract data definition and position in rlp
 (defn deserializer
   ([order counter data]
     (lazy-seq

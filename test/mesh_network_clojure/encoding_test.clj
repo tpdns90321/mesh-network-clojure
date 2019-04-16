@@ -45,11 +45,11 @@
   (testing "text"
     (is (=
          (first (encoding/decode-rlp (text-n-bytes 100)))
-         (struct encoding/rlp :Text (repeat 98 0)))))
+         (encoding/->rlp :Text (repeat 98 0)))))
   (testing "list"
     (is (=
          (encoding/decode-rlp d/BYTEORDER
                                 (concat
                                   [(+ encoding/under-sized-list 10)]
                                   (text-n-bytes 10)))
-         (list {:type :List,:data (list {:type :Text, :data (repeat 9 0)})})))))
+         (list (encoding/->rlp :List (list (encoding/->rlp :Text (repeat 9 0)))))))))

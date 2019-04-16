@@ -32,23 +32,25 @@
 (def bytes-to-long (def-buffer-input get-long long-size))
 
 (defn def-big-integer-input [size]
-  (fn [order data]
-    (domonad maybe-m
-      [size (bits-to-bytes size)
-       data (bytes! data)
-       data (limit-length! order size data)]
-      (bytes-to-big-integer! order data))))
+  (let [size (bits-to-bytes size)]
+    (fn [order data]
+      (domonad maybe-m
+        [size size
+         data (bytes! data)
+         data (limit-length! order size data)]
+        (bytes-to-big-integer! order data)))))
 
 (def bytes-to-i128 (def-big-integer-input 128))
 
 (defn def-unsigned-input
   "java can't support unsigned type! but java support big types. So this implement is ram-inefficiency, but It work very well!"
   [converter-fn size]
-  (fn [order data]
-    (domonad maybe-m
-             [size (bits-to-bytes size)
-              data (limit-length! order size data)]
-             (converter-fn order data))))
+  (let [size (bits-to-bytes size)]
+    (fn [order data]
+      (domonad maybe-m
+               [size size
+                data (limit-length! order size data)]
+               (converter-fn order data)))))
 
 (def bytes-to-unsigned-int (def-unsigned-input bytes-to-long int-size))
 (def bytes-to-unsigned-long (def-unsigned-input bytes-to-i128 long-size))

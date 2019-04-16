@@ -5,7 +5,7 @@
         [mesh-network-clojure.utils.bytes :only [bytes-to-unsigned-long]]))
 
 ; decoding result struct and input data for encoding to rlp
-(defstruct rlp :type :data)
+(defrecord rlp [type data])
 
 ; minimumize of type number
 (def under-sized-text (short 0x80))
@@ -51,8 +51,8 @@
           (if (= :List (first type))
             (cons
               (cons state
-	        (deserializer order
-		  (second state) (apply (partial slice data) pos))) step)
+            (deserializer order
+          (second state) (apply (partial slice data) pos))) step)
             (cons state step))))))
   ([order data] (deserializer order 0 data)))
 
@@ -64,8 +64,8 @@
         (domonad maybe-m
                  [[type & pos] %
                   inner (bytes! (apply (partial slice data) pos))]
-          (struct rlp type inner))
-        (struct rlp :List (decode-rlp order data (rest %)))) states))
+          (rlp. type inner))
+        (rlp. :List (decode-rlp order data (rest %)))) states))
   ([order data]
     (decode-rlp order data (deserializer BYTEORDER data)))
   ([data] (decode-rlp BYTEORDER data)))

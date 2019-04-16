@@ -24,7 +24,8 @@
   (fn [order data]
     (domonad maybe-m
              [size (bits-to-bytes size)
-              data (bytes! (limit-length! order size data))]
+              data (bytes! data)
+              data (limit-length! order size data)]
       (bytes-to-data! convert-fn size order (byte-array data)))))
 
 (def bytes-to-int (def-buffer-input get-int int-size))
@@ -34,7 +35,8 @@
   (fn [order data]
     (domonad maybe-m
       [size (bits-to-bytes size)
-      data (bytes! (limit-length! order size data))]
+       data (bytes! data)
+       data (limit-length! order size data)]
       (bytes-to-big-integer! order data))))
 
 (def bytes-to-i128 (def-big-integer-input 128))

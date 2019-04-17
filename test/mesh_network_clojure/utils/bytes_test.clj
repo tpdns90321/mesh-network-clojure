@@ -25,3 +25,9 @@
     (is (nil? (b/bytes-to-i128 :big-endian :blabla))))
   (testing "not byte element"
     (is (nil? (b/bytes-to-i128 :big-endian (list :blabla 0 0 0))))))
+
+(deftest int-to-bytes
+  (testing "check maximum size"
+    (is (nil? (b/int-to-bytes :big-endian (long (+ Integer/MAX_VALUE 1))))))
+  (testing "check number"
+    (is (nil? (b/int-to-bytes :big-endian :test)))))

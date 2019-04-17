@@ -11,7 +11,7 @@
 (def long-size 64)
 
 (defn bits-to-bytes [size]
-  (if (> size 0) (/ size 8) nil))
+  (if (and (> size 0) (= (mod size 8) 0)) (/ size 8) nil))
 
 (defn limit-length! [order limit data]
   (let [diff (- limit (count data))

@@ -96,3 +96,5 @@
     (fn [order data]
       (cut-length! order size (convert-fn order data)))))
 
+(def unsigned-int-to-bytes (def-unsigned-output long-to-bytes int-size))
+(def unsigned-long-to-bytes (def-unsigned-output i128-to-bytes long-size))

@@ -24,12 +24,12 @@
 
 (defn def-buffer-input
   [convert-fn size]
-  (fn [order data]
-    (domonad maybe-m
-             [size (bits-to-bytes size)
-              data (bytes! data)
-              data (limit-length! order size data)]
-      (bytes-to-data! convert-fn size order (byte-array data)))))
+  (let [size (bits-to-bytes size)]
+    (fn [order data]
+      (domonad maybe-m
+               [data (bytes! data)
+                data (limit-length! order size data)]
+               (bytes-to-data! convert-fn size order (byte-array data))))))
 
 (def bytes-to-int (def-buffer-input get-int int-size))
 (def bytes-to-long (def-buffer-input get-long long-size))
@@ -46,7 +46,7 @@
 (def bytes-to-i128 (def-big-integer-input 128))
 
 (defn def-unsigned-input
-  "java can't support unsigned type! but java support big types. So this implement is ram-inefficiency, but It work very well!"
+  "java can't support unsigned type! but java support big types. So this implement is using bigger-type and ram-inefficiency, but It work very well!"
   [convert-fn size]
   (let [size (bits-to-bytes size)]
     (fn [order data]
@@ -55,25 +55,32 @@
 (def bytes-to-unsigned-int (def-unsigned-input bytes-to-long int-size))
 (def bytes-to-unsigned-long (def-unsigned-input bytes-to-i128 long-size))
 
+(defn calc-maximum-size [bits]
+  (biginteger (Math/pow 2 bits)))
+
 (defn def-buffer-output [convert-fn size]
-  (let [size (bits-to-bytes size)]
+  (let [maximum (calc-maximum-size (- size 1))
+        size (bits-to-bytes size)]
     (fn [order data]
       (domonad maybe-m
                [size size
                 order (endian! order)
-                :when (number? data)]
+                :when (and (number? data)
+                           (> maximum data))]
                (data-to-bytes! convert-fn size order data)))))
 
 (def int-to-bytes (def-buffer-output set-int int-size))
 (def long-to-bytes (def-buffer-output set-long long-size))
 
 (defn def-big-integer-output [size]
-  (let [size (bits-to-bytes size)]
+  (let [maximum (calc-maximum-size (- size 1))
+        size (bits-to-bytes size)]
     (fn [order data]
       (domonad maybe-m
                [size size
                 order (endian! order)
-                :when (number? data)]
+                :when (and (number? data)
+                           (> maximum data))]
                (limit-length! order size
                               (big-integer-to-bytes! order data))))))
 
@@ -89,9 +96,12 @@
       nil)))
 
 (defn def-unsigned-output [convert-fn size]
-  (let [size (bits-to-bytes size)]
+  (let [maximum (calc-maximum-size size)
+        size (bits-to-bytes size)]
     (fn [order data]
-      (cut-length! order size (convert-fn order data)))))
+      (if (> maximum data)
+        (cut-length! order size (convert-fn order data))
+        nil))))
 
 (def unsigned-int-to-bytes (def-unsigned-output long-to-bytes int-size))
 (def unsigned-long-to-bytes (def-unsigned-output i128-to-bytes long-size))

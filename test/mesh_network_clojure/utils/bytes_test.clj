@@ -28,6 +28,12 @@
 
 (deftest int-to-bytes
   (testing "check maximum size"
-    (is (nil? (b/int-to-bytes :big-endian (long (+ Integer/MAX_VALUE 1))))))
+    (is (nil? (b/int-to-bytes :big-endian (+ (b/calc-maximum-size 31) 1)))))
   (testing "check number"
     (is (nil? (b/int-to-bytes :big-endian :test)))))
+
+(deftest i128-to-bytes
+  (testing "check maximum size"
+    (is (nil? (b/i128-to-bytes :big-endian (+ (b/calc-maximum-size 127) 1)))))
+  (testing "check number"
+    (is (nil? (b/i128-to-bytes :big-endian :test)))))

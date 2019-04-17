@@ -2,6 +2,12 @@
   (:use [clojure.algo.monads :only [domonad maybe-m]]
         [mesh-network-clojure.platform :only [to-raw!]]))
 
+(defn endian! [order]
+  (condp = order
+    :little-endian order
+    :big-endian order
+    nil))
+
 (defn to-big-endian! [order data]
   (condp = order
     :little-endian (reverse data)
@@ -51,8 +57,8 @@
 #?(:clj (def set-long (fn [^ByteBuffer buf data] (.putLong buf data))))
 
 #?(:clj
-   (defn big-integer-to-bytes! [order ^BigInteger data]
-     (let [convert (.toByteArray data)]
+   (defn big-integer-to-bytes! [order data]
+     (let [convert (.toByteArray (biginteger data))]
        (unsigned-bytes
          (to-big-endian! order
                          convert)))))

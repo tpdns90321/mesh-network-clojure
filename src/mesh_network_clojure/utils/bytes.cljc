@@ -1,8 +1,11 @@
 (ns mesh-network-clojure.utils.bytes
   (:use [clojure.algo.monads :only [domonad maybe-m]]
         [mesh-network-clojure.platform.bytes
-          :only [bytes-to-data! bytes-to-big-integer! get-int get-long]]
-        [mesh-network-clojure.utils :only [bytes!]]))
+          :only [bytes-to-data! bytes-to-big-integer!
+                 data-to-bytes! big-integer-to-bytes!
+                 get-int get-long set-int set-long
+                 endian!]]
+        [mesh-network-clojure.utils :only [bytes! slice]]))
 
 (def int-size 32)
 (def long-size 64)
@@ -54,3 +57,42 @@
 
 (def bytes-to-unsigned-int (def-unsigned-input bytes-to-long int-size))
 (def bytes-to-unsigned-long (def-unsigned-input bytes-to-i128 long-size))
+
+(defn def-buffer-output [convert-fn size]
+  (let [size (bits-to-bytes size)]
+    (fn [order data]
+      (domonad maybe-m
+               [size size
+                order (endian! order)
+                :when (number? data)]
+               (data-to-bytes! convert-fn size order data)))))
+
+(def int-to-bytes (def-buffer-output set-int int-size))
+(def long-to-bytes (def-buffer-output set-long long-size))
+
+(defn def-big-integer-output [size]
+  (let [size (bits-to-bytes size)]
+    (fn [order data]
+      (domonad maybe-m
+               [size size
+                order (endian! order)
+                :when (number? data)]
+               (limit-length! order size
+                              (big-integer-to-bytes! order data))))))
+
+(def i128-to-bytes (def-big-integer-output 128))
+
+(defn cut-length! [order limit data]
+  (let [size (count data)
+        diff (- size limit)]
+    (if (>= diff limit)
+      (condp = order
+        :little-endian (slice data 0 limit)
+        :big-endian (slice data diff size))
+      nil)))
+
+(defn def-unsigned-output [convert-fn size]
+  (let [size (bits-to-bytes size)]
+    (fn [order data]
+      (cut-length! order size (convert-fn order data)))))
+

@@ -57,16 +57,20 @@
 
 (defn calc-maximum-size [bits]
   (biginteger (Math/pow 2 bits)))
+(defn calc-minimum-size [bits]
+  (biginteger (Math/pow -2 bits)))
 
 (defn def-buffer-output [convert-fn size]
   (let [maximum (calc-maximum-size (- size 1))
+        minimum (calc-minimum-size (- size 1))
         size (bits-to-bytes size)]
     (fn [order data]
       (domonad maybe-m
                [size size
                 order (endian! order)
                 :when (and (number? data)
-                           (> maximum data))]
+                           (> maximum data)
+                           (<= minimum data))]
                (data-to-bytes! convert-fn size order data)))))
 
 (def int-to-bytes (def-buffer-output set-int int-size))
@@ -74,13 +78,15 @@
 
 (defn def-big-integer-output [size]
   (let [maximum (calc-maximum-size (- size 1))
+        minimum (calc-minimum-size (- size 1))
         size (bits-to-bytes size)]
     (fn [order data]
       (domonad maybe-m
                [size size
                 order (endian! order)
                 :when (and (number? data)
-                           (> maximum data))]
+                           (> maximum data)
+                           (<= minimum data))]
                (limit-length! order size
                               (big-integer-to-bytes! order data))))))
 
@@ -96,10 +102,9 @@
       nil)))
 
 (defn def-unsigned-output [convert-fn size]
-  (let [maximum (calc-maximum-size size)
-        size (bits-to-bytes size)]
+  (let [size (bits-to-bytes size)]
     (fn [order data]
-      (if (> maximum data)
+      (if (<= 0 data)
         (cut-length! order size (convert-fn order data))
         nil))))
 

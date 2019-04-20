@@ -2,7 +2,9 @@
   (:use [clojure.algo.monads :only [domonad maybe-m]]
         [mesh-network-clojure.default :only [BYTEORDER]]
         [mesh-network-clojure.utils :only [slice bytes!]]
-        [mesh-network-clojure.utils.bytes :only [bytes-to-unsigned-long]]))
+        [mesh-network-clojure.utils.bytes :only [bytes-to-unsigned-long
+                                                 unsigned-long-to-bytes
+                                                 dynamic-bytes]]))
 
 ; decoding result struct and input data for encoding to rlp
 (defrecord rlp [type data])
@@ -51,8 +53,8 @@
           (if (= :List (first type))
             (cons
               (cons state
-            (deserializer order
-          (second state) (apply (partial slice data) pos))) step)
+                (deserializer order
+                  (second state) (apply (partial slice data) pos))) step)
             (cons state step))))))
   ([order data] (deserializer order 0 data)))
 
@@ -71,3 +73,22 @@
   ([data] (decode-rlp BYTEORDER data)))
 
 (defn big? [size] (> size 55))
+
+(defn generate-padding [order under over length]
+  (if (big? length)
+    (let [padding (dynamic-bytes unsigned-long-to-bytes :big-endian length)
+          type-pos (+ over (dec (count padding)))]
+      (cons type-pos padding))
+    (list (+ under length))))
+
+(defn encode-rlp
+  ([order {type :type data :data}]
+    (condp = type
+      :Char data
+      :Text (concat
+              (generate-padding order under-sized-text over-sized-text (count data))
+              data)
+      :List (let [inner (reduce #(concat %1 (encode-rlp order %2)) '() data)]
+              (concat
+                (generate-padding order under-sized-list over-sized-list (count inner))
+                inner)))))

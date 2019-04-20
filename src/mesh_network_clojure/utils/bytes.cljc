@@ -4,7 +4,7 @@
           :only [bytes-to-data! bytes-to-big-integer!
                  data-to-bytes! big-integer-to-bytes!
                  get-int get-long set-int set-long
-                 endian!]]
+                 endian! to-big-endian!]]
         [mesh-network-clojure.utils :only [bytes! slice]]))
 
 (def int-size 32)
@@ -110,3 +110,8 @@
 
 (def unsigned-int-to-bytes (def-unsigned-output long-to-bytes int-size))
 (def unsigned-long-to-bytes (def-unsigned-output i128-to-bytes long-size))
+
+(defn dynamic-bytes [convert-fn order data]
+  (to-big-endian! order
+    (drop-while zero?
+      (convert-fn :big-endian data))))

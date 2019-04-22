@@ -5,7 +5,8 @@
                  data-to-bytes! big-integer-to-bytes!
                  get-int get-long set-int set-long
                  endian! to-big-endian!]]
-        [mesh-network-clojure.utils :only [bytes! slice]]))
+        [mesh-network-clojure.utils :only [bytes! slice]]
+        [mesh-network-clojure.platform.utils :only [pow]]))
 
 (def int-size 32)
 (def long-size 64)
@@ -56,9 +57,9 @@
 (def bytes-to-unsigned-long (def-unsigned-input bytes-to-i128 long-size))
 
 (defn calc-maximum-size [bits]
-  (biginteger (Math/pow 2 bits)))
+  (pow 2 bits))
 (defn calc-minimum-size [bits]
-  (biginteger (Math/pow -2 bits)))
+  (pow -2 bits))
 
 (defn def-buffer-output [convert-fn size]
   (let [maximum (calc-maximum-size (- size 1))

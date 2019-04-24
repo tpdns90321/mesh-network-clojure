@@ -74,21 +74,46 @@
 
 (defn big? [size] (> size 55))
 
-(defn generate-padding [order under over length]
+(defn generate-padding [under over order length]
   (if (big? length)
-    (let [padding (dynamic-bytes unsigned-long-to-bytes :big-endian length)
+    (let [padding (dynamic-bytes unsigned-long-to-bytes order length)
           type-pos (+ over (dec (count padding)))]
       (cons type-pos padding))
     (list (+ under length))))
 
+(def list-padding (partial generate-padding under-sized-list over-sized-list))
+(def text-padding (partial generate-padding under-sized-text over-sized-text))
+
 (defn encode-rlp
+  ([order rlps res tmp]
+   (if (empty? rlps)
+     (if (nil? tmp)
+       res
+       (recur order (first tmp)
+              (concat (second tmp) (list-padding order (count res)) res)
+              (nth 2 tmp)))
+     (let [{type :type data :data} (first rlps)]
+       (if (= type :List)
+         (recur order data nil (list (rest rlps) res tmp))
+         (recur order
+             (rest rlps)
+             (condp = type
+               :Char data
+               :Text (concat
+                       (text-padding order (count data))
+                       data)
+               nil) tmp)))))
+  ([order rlps]
+   (encode-rlp order (if (seq? rlps) rlps '(rlps)) nil nil)))
+
+"""(defn encode-rlp
   ([order {type :type data :data}]
     (condp = type
       :Char data
       :Text (concat
-              (generate-padding order under-sized-text over-sized-text (count data))
+              (text-padding order (count data))
               data)
       :List (let [inner (reduce #(concat %1 (encode-rlp order %2)) '() data)]
               (concat
-                (generate-padding order under-sized-list over-sized-list (count inner))
-                inner)))))
+                (list-padding order (count inner))
+                inner)))))"""

@@ -91,29 +91,18 @@
        res
        (recur order (first tmp)
               (concat (second tmp) (list-padding order (count res)) res)
-              (nth 2 tmp)))
+              (nth tmp 2)))
      (let [{type :type data :data} (first rlps)]
        (if (= type :List)
          (recur order data nil (list (rest rlps) res tmp))
          (recur order
              (rest rlps)
-             (condp = type
-               :Char data
-               :Text (concat
-                       (text-padding order (count data))
-                       data)
-               nil) tmp)))))
+             (concat
+               (condp = type
+                 :Char data
+                 :Text (concat
+                         (text-padding order (count data))
+                         data))
+               res) tmp)))))
   ([order rlps]
-   (encode-rlp order (if (seq? rlps) rlps '(rlps)) nil nil)))
-
-"""(defn encode-rlp
-  ([order {type :type data :data}]
-    (condp = type
-      :Char data
-      :Text (concat
-              (text-padding order (count data))
-              data)
-      :List (let [inner (reduce #(concat %1 (encode-rlp order %2)) '() data)]
-              (concat
-                (list-padding order (count inner))
-                inner)))))"""
+   (encode-rlp order (if (seq? rlps) rlps (list rlps)) nil nil)))

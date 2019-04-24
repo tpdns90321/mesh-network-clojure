@@ -53,3 +53,20 @@
                                   [(+ encoding/under-sized-list 10)]
                                   (text-n-bytes 10)))
          (list (encoding/->rlp :List (list (encoding/->rlp :Text (repeat 9 0)))))))))
+
+(deftest encode-rlp
+  (testing "text"
+    (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :Text '(0 0 0 0)))
+           (concat (encoding/generate-padding :big-endian encoding/under-sized-text encoding/over-sized-text 4)
+                   '(0 0 0 0)))))
+  (testing "list"
+    (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :List (list (encoding/->rlp :Text '(0 0 0 0)))))
+           (concat (list (+ encoding/under-sized-list 5) (+ encoding/under-sized-text 4) 0 0 0 0)))))
+  (testing "list long"
+    (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :List (repeat 100 (encoding/->rlp :Char '(0)))))
+           (concat (encoding/generate-padding :big-endian
+                                              encoding/under-sized-list encoding/over-sized-list 100) (repeat 100 0)))))
+  (testing "text long"
+    (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :Text (repeat 100 0)))
+           (concat (encoding/generate-padding :big-endian
+                                              encoding/under-sized-text encoding/over-sized-text 100) (repeat 100 0))))))

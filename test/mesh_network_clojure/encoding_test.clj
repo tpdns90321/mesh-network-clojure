@@ -63,9 +63,11 @@
     (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :List (list (encoding/->rlp :Text '(0 0 0 0)))))
            (concat (list (+ encoding/under-sized-list 5) (+ encoding/under-sized-text 4) 0 0 0 0)))))
   (testing "list long"
-    (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :List (repeat 100 (encoding/->rlp :Char '(0)))))
-           (concat (encoding/generate-padding encoding/under-sized-list encoding/over-sized-list :big-endian 100)
-                   (repeat 100 0)))))
+    (is (let [source (encoding/encode-rlp :big-endian (encoding/->rlp :List (repeat 100 (encoding/->rlp :Char '(0)))))
+              target (concat (encoding/generate-padding encoding/under-sized-list encoding/over-sized-list :big-endian 100)
+                             (repeat 100 0))]
+          (and (= source target)
+               (= (count source) 102)))))
   (testing "text long"
     (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :Text (repeat 100 0)))
            (concat (encoding/generate-padding encoding/under-sized-text encoding/over-sized-text :big-endian 100)

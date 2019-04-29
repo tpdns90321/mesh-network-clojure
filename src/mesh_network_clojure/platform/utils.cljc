@@ -1,3 +1,3 @@
 (ns mesh-network-clojure.platform.utils)
 
-#?(:clj (defn pow [a b] (biginteger (Math/pow a b))))
+#?(:clj (defn int-pow [a b] (biginteger (Math/pow a b))))

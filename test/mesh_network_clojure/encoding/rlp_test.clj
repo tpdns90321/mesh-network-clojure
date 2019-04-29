@@ -1,6 +1,6 @@
-(ns mesh-network-clojure.encoding-test
+(ns mesh-network-clojure.encoding.rlp-test
   (:require [clojure.test :refer :all]
-            [mesh-network-clojure.encoding :as encoding]
+            [mesh-network-clojure.encoding.rlp :as encoding]
             [mesh-network-clojure.default :as d]))
 
 (defn text-n-bytes [n]

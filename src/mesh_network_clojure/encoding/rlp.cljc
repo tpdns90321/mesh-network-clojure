@@ -1,4 +1,4 @@
-(ns mesh-network-clojure.encoding
+(ns mesh-network-clojure.encoding.rlp
   (:use [clojure.algo.monads :only [domonad maybe-m]]
         [mesh-network-clojure.default :only [BYTEORDER]]
         [mesh-network-clojure.utils :only [slice bytes!]]

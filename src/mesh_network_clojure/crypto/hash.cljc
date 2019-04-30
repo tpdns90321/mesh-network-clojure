@@ -1,4 +1,4 @@
-(ns mesh-network-clojure.utils.hash
+(ns mesh-network-clojure.crypto.hash
   (:use [clojure.algo.monads :only [domonad maybe-m]]
         [mesh-network-clojure.utils :only [bytes!]]
         [mesh-network-clojure.platform.bytes :only [unsigned-bytes]]

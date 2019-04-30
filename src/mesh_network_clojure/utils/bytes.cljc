@@ -30,7 +30,7 @@
       (domonad maybe-m
                [data (bytes! data)
                 data (limit-length! order size data)]
-               (bytes-to-data! convert-fn size order (byte-array data))))))
+               (bytes-to-data! convert-fn size order data)))))
 
 (def bytes-to-int (def-buffer-input get-int int-size))
 (def bytes-to-long (def-buffer-input get-long long-size))

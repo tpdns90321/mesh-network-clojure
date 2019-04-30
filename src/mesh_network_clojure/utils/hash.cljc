@@ -10,3 +10,6 @@
             hash-func (hash-name hashes)
             data (bytes! data)]
            (unsigned-bytes (hash-func data))))
+
+(def sha2 (partial hash-function :sha2))
+(def sha3-256 (partial hash-function :sha3-256))

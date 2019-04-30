@@ -1,10 +1,10 @@
 (ns mesh-network-clojure.encoding.rlp
   (:use [clojure.algo.monads :only [domonad maybe-m]]
         [mesh-network-clojure.default :only [BYTEORDER]]
-        [mesh-network-clojure.utils :only [slice bytes!]]
         [mesh-network-clojure.utils.bytes :only [bytes-to-unsigned-long
                                                  unsigned-long-to-bytes
-                                                 dynamic-bytes]]))
+                                                 dynamic-bytes
+                                                 slice bytes!]]))
 
 ; decoding result struct and input data for encoding to rlp
 (defrecord rlp [type data])

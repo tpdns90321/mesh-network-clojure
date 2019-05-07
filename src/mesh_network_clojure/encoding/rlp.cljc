@@ -92,9 +92,8 @@
     (map
       #(if (= (first %) :List)
         (create-rlp :List (decode-rlp order data (last %)))
-        (domonad maybe-m
-                 [[type & pos] %
-                  inner (bytes! (apply (partial slice data) pos))]
+        (let [[type & pos] %
+              inner (apply (partial slice data) pos)]
           (create-rlp type inner))) states))
   ([order data]
     (decode-rlp order data (deserializer BYTEORDER data)))

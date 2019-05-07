@@ -5,7 +5,11 @@
                  data-to-bytes! big-integer-to-bytes!
                  get-int get-long set-int set-long
                  endian! to-big-endian!]]
-        [mesh-network-clojure.platform.utils :only [int-pow]]))
+        [mesh-network-clojure.platform.utils :only [int-pow]])
+  (:require [schema.core :as s]))
+
+(def unsigned-bytes [(s/pred #(and (> 256 %) (<= 0 %)))])
+(def byteorder (s/enum :big-endian :little-endian))
 
 (defn bytes! [data]
   (if (and (seq? data) (every? #(and (number? %) (< % 256)) data)) data nil))

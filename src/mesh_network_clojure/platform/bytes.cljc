@@ -1,7 +1,6 @@
 (ns mesh-network-clojure.platform.bytes
-  (:use [clojure.algo.monads :only [domonad maybe-m]]))
-
-#?(:clj (import [java.nio ByteOrder]))
+  (:use [clojure.algo.monads :only [domonad maybe-m]])
+  (:import #?(:clj [java.nio ByteOrder ByteBuffer])))
 
 ; endian
 (def endians {:big-endian #?(:clj ByteOrder/BIG_ENDIAN),
@@ -24,8 +23,6 @@
     :little-endian data
     nil))
 
-#?(:clj (import [java.nio ByteBuffer]))
-
 #?(:clj
    (defn bytes-to-data!
      "convert bytes seq or array to custom type that using convert-fn"
@@ -43,7 +40,7 @@
     (defn bytes-to-big-integer! [order data]
       (biginteger (byte-array (to-big-endian! order data)))))
 
-(defn unsigned-bytes [arr]
+(defn to-unsigned-bytes [arr]
  (map #(short (bit-and % 0xff)) arr))
 
 #?(:clj
@@ -54,7 +51,7 @@
                       (.order (order endians)))]
        (input-fn buff data)
        (.flip buff)
-       (unsigned-bytes
+       (to-unsigned-bytes
          (.array buff)))))
 
 #?(:clj (def set-int (fn [^ByteBuffer buf data] (.putInt buf data))))
@@ -63,6 +60,6 @@
 #?(:clj
    (defn big-integer-to-bytes! [order data]
      (let [convert (.toByteArray (biginteger data))]
-       (unsigned-bytes
+       (to-unsigned-bytes
          (to-big-endian! order
                          convert)))))

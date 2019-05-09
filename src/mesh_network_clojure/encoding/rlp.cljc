@@ -7,11 +7,10 @@
                                                  bytes-to-unsigned-long
                                                  unsigned-long-to-bytes
                                                  dynamic-bytes
-                                                 slice bytes!]]))
+                                                 slice]]))
 
-(def rlp-type (s/enum :List :Text :Char :Error))
 ; decoding result struct and input data for encoding to rlp
-; (defrecord rlp [type data])
+(def rlp-type (s/enum :List :Text :Char :Error))
 (def rlp (s/conditional
            #(= (:type %) :List) {:type (s/eq :List) :data [(s/recursive #'rlp)]}
            #(s/validate rlp-type (:type %)) {:type rlp-type :data unsigned-bytes}))
@@ -92,9 +91,8 @@
     (map
       #(if (= (first %) :List)
         (create-rlp :List (decode-rlp order data (last %)))
-        (domonad maybe-m
-                 [[type & pos] %
-                  inner (bytes! (apply (partial slice data) pos))]
+        (let [[type & pos] %
+              inner (apply (partial slice data) pos)]
           (create-rlp type inner))) states))
   ([order data]
     (decode-rlp order data (deserializer BYTEORDER data)))
@@ -102,7 +100,11 @@
 
 (defn big? [size] (> size 55))
 
-(defn generate-padding [under over order length]
+(s/defn generate-padding :- unsigned-bytes
+  [under :- s/Num
+   over :- s/Num
+   order :- byteorder
+   length :- s/Num]
   (if (big? length)
     (let [padding (dynamic-bytes unsigned-long-to-bytes order length)
           type-pos (+ over (dec (count padding)))]
@@ -112,8 +114,9 @@
 (def list-padding (partial generate-padding under-sized-list over-sized-list))
 (def text-padding (partial generate-padding under-sized-text over-sized-text))
 
-(defn encode-rlp
-  ([order rlps res tmp]
+(s/defn encode-rlp :- (s/maybe unsigned-bytes)
+  ([order :- byteorder rlps :- [rlp]
+    res :- deserializer-res tmp :- s/Any]
    (loop [rlps rlps
           res res
           tmp tmp]
@@ -135,4 +138,6 @@
                                 data))
                       res) tmp))))))
   ([order rlps]
-   (encode-rlp order (if (seq? rlps) rlps (list rlps)) nil nil)))
+    (encode-rlp order (if (seq? rlps) rlps (list rlps)) nil nil))
+  ([rlps]
+   (encode-rlp BYTEORDER rlps)))

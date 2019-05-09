@@ -11,9 +11,6 @@
 (def unsigned-bytes [(s/pred #(and (> 256 %) (<= 0 %)))])
 (def byteorder (s/enum :big-endian :little-endian))
 
-(defn bytes! [data]
-  (if (and (seq? data) (every? #(and (number? %) (< % 256)) data)) data nil))
-
 (defn slice [ar start end]
   (let
     [front (first (split-at end ar))]
@@ -37,10 +34,9 @@
 (defn def-buffer-input
   [convert-fn size]
   (let [size (bits-to-bytes size)]
-    (fn [order data]
+    (s/fn [order :- byteorder data :- unsigned-bytes]
       (domonad maybe-m
-               [data (bytes! data)
-                data (limit-length! order size data)]
+               [data (limit-length! order size data)]
                (bytes-to-data! convert-fn size order data)))))
 
 (def bytes-to-int (def-buffer-input get-int int-size))

@@ -1,5 +1,6 @@
 (ns mesh-network-clojure.storage
-  (:use [clojure.core.async :as async]))
+  (:use [#?(:clj clojure.core.async
+            :cljs cljs.core.async) :as async]))
 
 (defrecord storage-driver [channel])
 

@@ -21,11 +21,11 @@
                                 (concat
                                   [(+ encoding/under-sized-list 10)]
                                   (text-n-bytes 10)))
-         (list (list '(:List 1 11) '(:Text 2 11))))))
+         (list '(:List 1 11 ((:Text 2 11)))))))
   (testing "recursion list"
     (is (=
          (encoding/deserializer d/BYTEORDER (map #(+ encoding/under-sized-list %) [2 1 0]))
-         (list (list '(:List 1 3) (list '(:List 2 3) (list '(:List 3 3))))))))
+         (list '(:List 1 3 ((:List 2 3 ((:List 3 3 ())))))))))
   (testing "long text"
     (is (=
          (encoding/deserializer d/BYTEORDER (text-n-bytes 100))
@@ -34,7 +34,7 @@
     (is (=
          (encoding/deserializer d/BYTEORDER
                                 (concat (list encoding/over-sized-list 100) (text-n-bytes 100)))
-         (list '((:List 2 102) (:Text 4 102))))))
+         (list '(:List 2 102 ((:Text 4 102)))))))
   (testing "order"
     (is (=
          (encoding/deserializer d/BYTEORDER
@@ -45,30 +45,30 @@
   (testing "text"
     (is (=
          (first (encoding/decode-rlp (text-n-bytes 100)))
-         (encoding/->rlp :Text (repeat 98 0)))))
+         (encoding/create-rlp :Text (repeat 98 0)))))
   (testing "list"
     (is (=
          (encoding/decode-rlp d/BYTEORDER
                                 (concat
                                   [(+ encoding/under-sized-list 10)]
                                   (text-n-bytes 10)))
-         (list (encoding/->rlp :List (list (encoding/->rlp :Text (repeat 9 0)))))))))
+         (list (encoding/create-rlp :List (list (encoding/create-rlp :Text (repeat 9 0)))))))))
 
 (deftest encode-rlp
   (testing "text"
-    (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :Text '(0 0 0 0)))
+    (is (= (encoding/encode-rlp :big-endian (encoding/create-rlp :Text '(0 0 0 0)))
            (concat (encoding/generate-padding encoding/under-sized-text encoding/over-sized-text :big-endian 4)
                    '(0 0 0 0)))))
   (testing "list"
-    (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :List (list (encoding/->rlp :Text '(0 0 0 0)))))
+    (is (= (encoding/encode-rlp :big-endian (encoding/create-rlp :List (list (encoding/create-rlp :Text '(0 0 0 0)))))
            (concat (list (+ encoding/under-sized-list 5) (+ encoding/under-sized-text 4) 0 0 0 0)))))
   (testing "list long"
-    (is (let [source (encoding/encode-rlp :big-endian (encoding/->rlp :List (repeat 100 (encoding/->rlp :Char '(0)))))
+    (is (let [source (encoding/encode-rlp :big-endian (encoding/create-rlp :List (repeat 100 (encoding/create-rlp :Char '(0)))))
               target (concat (encoding/generate-padding encoding/under-sized-list encoding/over-sized-list :big-endian 100)
                              (repeat 100 0))]
           (and (= source target)
                (= (count source) 102)))))
   (testing "text long"
-    (is (= (encoding/encode-rlp :big-endian (encoding/->rlp :Text (repeat 100 0)))
+    (is (= (encoding/encode-rlp :big-endian (encoding/create-rlp :Text (repeat 100 0)))
            (concat (encoding/generate-padding encoding/under-sized-text encoding/over-sized-text :big-endian 100)
                    (repeat 100 0))))))

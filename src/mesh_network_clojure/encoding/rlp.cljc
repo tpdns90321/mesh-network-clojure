@@ -116,10 +116,10 @@
 
 (s/defn encode-rlp :- (s/maybe unsigned-bytes)
   ([order :- byteorder rlps :- [rlp]
-    res :- deserializer-res tmp :- s/Any]
+    res :- deserializer-res]
    (loop [rlps rlps
           res res
-          tmp tmp]
+          tmp nil]
      (if (empty? rlps)
        (if (nil? tmp)
          res
@@ -138,6 +138,6 @@
                                 data))
                       res) tmp))))))
   ([order rlps]
-    (encode-rlp order (if (seq? rlps) rlps (list rlps)) nil nil))
+    (encode-rlp order (if (seq? rlps) rlps (list rlps)) nil))
   ([rlps]
    (encode-rlp BYTEORDER rlps)))

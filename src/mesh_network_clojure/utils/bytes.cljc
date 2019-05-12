@@ -8,6 +8,7 @@
         [mesh-network-clojure.platform.utils :only [int-pow]])
   (:require [schema.core :as s]))
 
+(def positive-num (s/pred #(< 0 %)))
 (def unsigned-bytes [(s/pred #(and (> 256 %) (<= 0 %)))])
 (def byteorder (s/enum :big-endian :little-endian))
 
@@ -16,13 +17,16 @@
     [front (first (split-at end ar))]
     (last (split-at start front))))
 
-(def int-size 32)
-(def long-size 64)
-
 (defn bits-to-bytes [size]
   (if (and (> size 0) (= (mod size 8) 0)) (/ size 8) nil))
 
-(defn limit-length! [order limit data]
+(def int-size 32)
+(def long-size 64)
+
+(s/defn limit-length! :- (s/maybe unsigned-bytes)
+  [order :- byteorder
+   limit :- s/Num 
+   data :- unsigned-bytes]
   (let [diff (- limit (count data))
         zero (repeat (short 0))]
     (if (>= diff 0)
@@ -31,33 +35,38 @@
         :big-endian (concat (take diff zero) data))
       nil)))
 
+(defn validate-return [target value]
+  (s/validate target value))
+
+(def input-return (s/maybe s/Num))
+
 (defn def-buffer-input
   [convert-fn size]
   (let [size (bits-to-bytes size)]
-    (s/fn [order :- byteorder data :- unsigned-bytes]
-      (domonad maybe-m
-               [data (limit-length! order size data)]
-               (bytes-to-data! convert-fn size order data)))))
+    (s/fn :- (s/maybe unsigned-bytes) [order :- byteorder data :- unsigned-bytes]
+      (validate-return input-return
+        (domonad maybe-m
+                 [data (limit-length! order size data)]
+                 (bytes-to-data! convert-fn size order data))))))
 
 (def bytes-to-int (def-buffer-input get-int int-size))
 (def bytes-to-long (def-buffer-input get-long long-size))
 
 (defn def-big-integer-input [size]
-  (let [size (bits-to-bytes size)]
-    (fn [order data]
-      (domonad maybe-m
-        [size size
-         data (bytes! data)
-         data (limit-length! order size data)]
-        (bytes-to-big-integer! order data)))))
+  (let [size (s/validate positive-num (bits-to-bytes size))]
+    (s/fn [order :- byteorder data :- unsigned-bytes]
+      (validate-return input-return
+        (domonad maybe-m
+          [data (limit-length! order size data)]
+          (bytes-to-big-integer! order data))))))
 
 (def bytes-to-i128 (def-big-integer-input 128))
 
 (defn def-unsigned-input
   "java can't support unsigned type! but java support big types. So this implement is using bigger-type and ram-inefficiency, but It work very well!"
   [convert-fn size]
-  (let [size (bits-to-bytes size)]
-    (fn [order data]
+  (let [size (s/validate positive-num (bits-to-bytes size))]
+    (s/fn [order :- byteorder data :- unsigned-bytes]
       (convert-fn order (limit-length! order size data)))))
 
 (def bytes-to-unsigned-int (def-unsigned-input bytes-to-long int-size))
@@ -68,18 +77,18 @@
 (defn calc-minimum-size [bits]
   (int-pow -2 bits))
 
+(defn between [minimum maximum]
+  (s/pred #(and (<= minimum %) (> maximum %))))
+
+(def output-return (s/maybe unsigned-bytes))
+
 (defn def-buffer-output [convert-fn size]
   (let [maximum (calc-maximum-size (- size 1))
         minimum (calc-minimum-size (- size 1))
-        size (bits-to-bytes size)]
-    (fn [order data]
-      (domonad maybe-m
-               [size size
-                order (endian! order)
-                :when (and (number? data)
-                           (> maximum data)
-                           (<= minimum data))]
-               (data-to-bytes! convert-fn size order data)))))
+        size (s/validate positive-num (bits-to-bytes size))]
+    (s/fn [order :- byteorder data :- (between minimum maximum)]
+      (validate-return output-return
+        (data-to-bytes! convert-fn size order data)))))
 
 (def int-to-bytes (def-buffer-output set-int int-size))
 (def long-to-bytes (def-buffer-output set-long long-size))
@@ -87,16 +96,11 @@
 (defn def-big-integer-output [size]
   (let [maximum (calc-maximum-size (- size 1))
         minimum (calc-minimum-size (- size 1))
-        size (bits-to-bytes size)]
-    (fn [order data]
-      (domonad maybe-m
-               [size size
-                order (endian! order)
-                :when (and (number? data)
-                           (> maximum data)
-                           (<= minimum data))]
-               (limit-length! order size
-                              (big-integer-to-bytes! order data))))))
+        size (s/validate positive-num (bits-to-bytes size))]
+    (s/fn [order :- byteorder data :- (between minimum maximum)]
+      (validate-return output-return
+                       (limit-length! order size
+                                      (big-integer-to-bytes! order data))))))
 
 (def i128-to-bytes (def-big-integer-output 128))
 
@@ -110,11 +114,10 @@
       nil)))
 
 (defn def-unsigned-output [convert-fn size]
-  (let [size (bits-to-bytes size)]
-    (fn [order data]
-      (if (<= 0 data)
-        (cut-length! order size (convert-fn order data))
-        nil))))
+  (let [maximum (calc-maximum-size size)
+        size (s/validate positive-num (bits-to-bytes size))]
+    (s/fn [order :- byteorder data :- (between 0 maximum)]
+      (cut-length! order size (convert-fn order data)))))
 
 (def unsigned-int-to-bytes (def-unsigned-output long-to-bytes int-size))
 (def unsigned-long-to-bytes (def-unsigned-output i128-to-bytes long-size))

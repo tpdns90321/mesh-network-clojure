@@ -6,8 +6,9 @@
   (:require [schema.core :as s]))
 
 (def hash-keys (apply s/enum (keys hashes)))
+(def hash-type (s/pred #(and (s/validate unsigned-bytes %) (= 32 (count %)))))
 
-(s/defn hash-function :- (s/maybe unsigned-bytes)
+(s/defn hash-function :- (s/maybe hash-type)
   [hash-name :- hash-keys
    data :- unsigned-bytes]
   (let [hash-func (hash-name hashes)

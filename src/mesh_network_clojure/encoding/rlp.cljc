@@ -12,11 +12,13 @@
 ; decoding result struct and input data for encoding to rlp
 (def rlp-type (s/enum :List :Text :Char :Error))
 (def rlp (s/conditional
-           #(= (:type %) :List) {:type (s/eq :List) :data [(s/recursive #'rlp)]}
-           #(s/validate rlp-type (:type %)) {:type rlp-type :data unsigned-bytes}))
+           #(= (:type %) :Error) {:type (s/eq :Error) :data s/Str}
+           #(= (:type %) :List) {:type (s/eq :List)
+                                 :data [(s/maybe (s/recursive #'rlp))]}
+           :type {:type rlp-type :data unsigned-bytes}))
 
 (s/defn create-rlp :- rlp [type :- rlp-type
-                           data :- [s/Any]] {:type type, :data data})
+                           data :- s/Any] {:type type, :data data})
 
 ; minimumize of type number
 (def under-sized-text (short 0x80))
@@ -74,13 +76,15 @@
            pos (calc-position! type order (rest data))
            state (cons (first type) (map #(+ counter %) pos))
            step (deserializer order (last state) (last (split-at (last pos) data)))]
-          (if (= :List (first type))
-            (cons
-              (concat state
-                      (list
-                        (deserializer order
-                          (second state) (apply (partial slice data) pos)))) step)
-            (cons state step))))))
+          (if (>= (apply - (reverse pos)) (count data))
+            (cons '(:Error 0 0) step)
+            (if (= :List (first type))
+              (cons
+                (concat state
+                        (list
+                          (deserializer order
+                            (second state) (apply (partial slice data) pos)))) step)
+              (cons state step)))))))
   ([order data] (deserializer order 0 data)))
 
 (s/defn decode-rlp :- [rlp]
@@ -91,9 +95,12 @@
     (map
       #(if (= (first %) :List)
         (create-rlp :List (decode-rlp order data (last %)))
-        (let [[type & pos] %
-              inner (apply (partial slice data) pos)]
-          (create-rlp type inner))) states))
+          (let [[type & pos] %
+                 inner (apply (partial slice data) pos)]
+               (if (= type :Error)
+                 (create-rlp :Error "Wrong Size")
+                 (create-rlp type inner))))
+            states))
   ([order data]
     (decode-rlp order data (deserializer BYTEORDER data)))
   ([data] (decode-rlp BYTEORDER data)))
@@ -140,4 +147,4 @@
   ([order rlps]
     (encode-rlp order (if (seq? rlps) rlps (list rlps)) nil))
   ([rlps]
-   (encode-rlp BYTEORDER rlps)))
+    (encode-rlp BYTEORDER rlps)))
